@@ -27,6 +27,6 @@ while helper.query_yes_no("Start next measurement?"):
     plt.plot(x, data, x, g)
     plt.show()
 
-np.save("data\\epsilon_dm.npy", dm)
-np.save("data\\epsilon_d2.npy", d2)
+np.save(os.path.join("data", "epsilon_dm.npy"), dm)
+np.save(os.path.join("data", "epsilon_d2.npy"), d2)
 
