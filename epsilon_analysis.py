@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar  8 17:14:29 2017
-
-@author: nabilah
-"""
-
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
@@ -53,3 +46,4 @@ plt.text(0.07, 1.1, value_text, bbox={'facecolor':'white', 'pad':7})
 
 
 plt.savefig("figures\\epsilon_analysis.png", dpi=300)
+

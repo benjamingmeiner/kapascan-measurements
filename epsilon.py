@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar  8 15:18:49 2017
-
-@author: nabilah
-"""
 import sys, os
 sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
 import helper
@@ -35,3 +29,4 @@ while helper.query_yes_no("Start next measurement?"):
 
 np.save("data\\epsilon_dm.npy", dm)
 np.save("data\\epsilon_d2.npy", d2)
+

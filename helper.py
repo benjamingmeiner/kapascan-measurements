@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar  8 15:54:12 2017
-
-@author: nabilah
-"""
-
 import sys
 
 def query_yes_no(question, default="yes"):
@@ -29,7 +22,6 @@ def query_yes_no(question, default="yes"):
         raise ValueError("invalid default answer: '%s'" % default)
 
     while True:
-        #sys.stdout.write(question + prompt)
         choice = input(question + prompt).lower()
         if default is not None and choice == '':
             return valid[default]
