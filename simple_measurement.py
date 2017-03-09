@@ -1,3 +1,5 @@
+import sys, os
+sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan')
 import controller
 import matplotlib.pyplot as plt
 

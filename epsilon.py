@@ -4,6 +4,8 @@ Created on Wed Mar  8 15:18:49 2017
 
 @author: nabilah
 """
+import sys, os
+sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
 import helper
 import controller
 import scipy.stats
