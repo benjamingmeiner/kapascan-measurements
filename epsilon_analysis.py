@@ -1,9 +1,10 @@
+import os
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
 
-dm = np.load("data\\epsilon_dm.npy")
-d2 = np.load("data\\epsilon_d2.npy")
+dm = np.load(os.path.join("data", "epsilon_dm.npy"))
+d2 = np.load(os.path.join("data", "epsilon_d2.npy"))
 
 # remove duplicate measurements
 index_skip = []
@@ -45,5 +46,6 @@ value_text = ("$s=${:.4}\n".format(slope) +
 plt.text(0.07, 1.1, value_text, bbox={'facecolor':'white', 'pad':7})
 
 
-plt.savefig("figures\\epsilon_analysis.png", dpi=300)
+plt.savefig(os.path.join("figures", "epsilon_analysis.png"), dpi=300)
+
 
