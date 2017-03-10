@@ -1,12 +1,12 @@
 import sys, os
 sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
+
 import helper
 import controller
 import scipy.stats
 import numpy as np
 import matplotlib.pyplot as plt
-import importlib
-importlib.reload(controller)
+
 
 host = '192.168.254.173'
 data_points = 10000
