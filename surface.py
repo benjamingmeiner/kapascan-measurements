@@ -1,13 +1,12 @@
 import sys, os
 sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
 
-from measurement import Measurement
+from measurement import m
 import numpy as np
 import matplotlib.pyplot as plt
 
-m =  Measurement()
 with m:
-    x, y, z = m.measure(0, 0, 1, 1, 0.1)
+    x, y, z = m.measure(20, 20, 21, 21, 0.2)
 
 dx = (x[-1] - x[0]) / (2 * len(x))
 dy = (y[-1] - y[0]) / (2 * len(y))
