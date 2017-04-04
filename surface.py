@@ -9,10 +9,10 @@ serial_port = 'COM3'
 settings = {
         'sampling_time': 0.05,
         'data_points': 100,
-        'extent': ((0, 0, 0.1), (0, 10, 0.2))
+        'extent': ((1, 18, 0.1), (1, 18, 0.1))
         }
 
 with Measurement(host, serial_port, **settings) as m:
-    x, y, z = m.scan()
-
-plot.plot(x, y, z)
+    m.interactive_mode()
+    #x, y, z = m.scan()
+    #plot.plot(x, y, z)

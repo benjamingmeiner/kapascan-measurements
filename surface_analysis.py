@@ -11,7 +11,7 @@ x = np.load(os.path.join("data", "surface_x.npy"))
 y = np.load(os.path.join("data", "surface_y.npy"))
 z = 0.5 * background + 0.5 * background2 - sample
 
-noise = (background2 - background) * 0.0001
+noise = (background2 - background) * 0.00005
 noise -= noise.mean()
 
 stepsize = x[1] - x[0]
