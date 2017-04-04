@@ -1,24 +1,21 @@
 import os
 import numpy as np
-
 from plot import plot
 import analysis
 
 background = np.load(os.path.join("data", "surface_background.npy"))
+background2 = np.load(os.path.join("data", "surface_background2.npy"))
 sample = np.load(os.path.join("data", "surface_sample.npy"))
-coordinates = np.load(os.path.join("data", "surface_coordinates.npy"))
 
+x = np.load(os.path.join("data", "surface_x.npy"))
+y = np.load(os.path.join("data", "surface_y.npy"))
+z = 0.5 * background + 0.5 * background2 - sample
 
-x = coordinates[0]
-y = coordinates[1]
-z = background-sample
+noise = (background2 - background) * 0.0001
+noise -= noise.mean()
 
-#plot(x, y, z, contour=False)
-stepsize = x[1] -x[0] #mm
-diameter = int(2. / stepsize + 0.5) + 1
+stepsize = x[1] - x[0]
+diameter = int(8.2 / stepsize + 0.5)
 sensor = analysis.sensor_function(diameter)
-#noise = analysis.detrend2D(x, y, background)
-noise = background
-zz = analysis.wiener(z, sensor, 0, 1)
-#
-plot(x, y, zz, contour=False)
+z_restored = analysis.wiener(z, sensor, noise)
+plot(x, y, z_restored)
