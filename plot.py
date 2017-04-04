@@ -1,6 +1,27 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+def plot(x, y, z, contour=True):
+    xis1D = True if x.shape[0] is 1 else False
+    yis1D = True if y.shape[0] is 1 else False
+    if xis1D and yis1D:
+        pass
+    elif xis1D and not yis1D:
+        plot1D(y, np.transpose(z)[0], "$y$ [mm]", "z [µm]")
+    elif yis1D and not xis1D:
+        plot1D(x, z[0], "$x$ [mm]", "$z$ [µm]")
+    else:
+        plot2D(x, y, z)
+
+
+def plot1D(x, y, xlabel, ylabel): 
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+
 def extent(x, y):
     """
     Calculates extent values to be used by imshow()
@@ -27,7 +48,8 @@ def extent(x, y):
             dy = dx
     return (x[0] - dx, x[-1] + dx, y[0] - dy, y[-1] + dy)
 
-def plot(x, y, z, contour=True):
+
+def plot2D(x, y, z, contour=False): 
     ext = extent(x, y)
     fig, ax = plt.subplots()
     if contour:
