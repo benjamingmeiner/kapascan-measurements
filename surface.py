@@ -4,6 +4,7 @@ sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
 from measurement import Measurement
 from plot import plot
 import numpy as np
+import shelve
 
 sensor = '2011'
 host = '192.168.254.173'
@@ -12,8 +13,10 @@ serial_port = 'COM3'
 settings = {
     'sampling_time': 0.256,
     'data_points': 100,
-    'extent': ((1, 1.5, 0.1), (1, 1.5, 0.1)),
+    'extent': ((4, 21, 0.15), (4, 18, 0.15)),
     'mode': 'absolute',
+    'direction': ('x', 'y'),
+    'change_direction': False
     }
 
 m = Measurement(sensor, host, serial_port, settings)
@@ -23,7 +26,9 @@ with m:
     plot(x, y, z)
 
 
-datadir = "data"
-filename = "test"
-for coord, data in zip(("x", "y", "z"), (x, y, z)):
-    np.save(os.path.join(datadir, filename + "_" + coord), data)
+#datadir = "data"
+#filename = "surface"
+#for coord, data in zip(("x", "y", "z"), (x, y, z)):
+#    np.save(os.path.join(datadir, filename + "_" + coord), data)
+#with shelve.open(os.path.join(datadir, filename + "_measurement")) as file:
+#    file['measurement'] = m
