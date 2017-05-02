@@ -6,30 +6,30 @@ def wiener(y, h, n, s=1):
     """
     2D Wiener deconvolution. Implemented as defined in
     https://en.wikipedia.org/wiki/Wiener_deconvolution
- 
+
     Parameters
     ----------
-    y : 2D array
+    y : ndarray (1D or 2D)
         The observed signal
- 
-    h : 2D array
+
+    h : ndarray (1D or 2D)
         The impulse response (point spread function) of the system
- 
-    n : scalar or 2D array
+
+    n : scalar or ndarray (1D or 2D)
         The signal from which the power spectral density of the noise is
         calculated. If n is a scalar the value is used directly as the PSD.
- 
-    s : scalar or 2D array, optional
+
+    s : scalar or ndarray (1D or 2D), optional
         The signal from which the power spectral density of the origininal
         signal is calculated. If s is a scalar the value is used directly as
         the PSD.
- 
+
     Returns
     -------
-    x : 2D array
+    x : ndarray (1D or 2D)
         An estimate of the original signal.
     """
- 
+
     # pad signal with zeros to full length of actual convolution
     widths = [[width // 2] for width in h.shape]
     y_padded = np.pad(y, widths, mode='constant', constant_values=0)
@@ -37,45 +37,53 @@ def wiener(y, h, n, s=1):
     length = [sy + sh - 1  for sy, sh in zip(y_padded.shape, h.shape)]
 
     if not np.isscalar(n):
-        N = np.absolute(np.fft.rfft2(n, length))**2
+        N = np.absolute(np.fft.rfftn(n, length))**2
     else:
         N = n
     if not np.isscalar(s):
-        S = np.absolute(np.fft.rfft2(s, length))**2
+        S = np.absolute(np.fft.rfftn(s, length))**2
     else:
         S = s
- 
-    Y = np.fft.rfft2(y_padded, length)
-    H = np.fft.rfft2(h, length)
+
+    Y = np.fft.rfftn(y_padded, length)
+    H = np.fft.rfftn(h, length)
     G = (np.conj(H) * S) / (np.absolute(H)**2 * S + N)
     X = G * Y
-    x = np.fft.irfft2(X, length)
- 
-    return x[:y.shape[0],:y.shape[1]].copy()
+    x = np.fft.irfftn(X, length)
+
+    if len(y.shape) == 1:
+        return x[:y.shape[0]].copy()
+    if len(y.shape) == 2:
+        return x[:y.shape[0],:y.shape[1]].copy()
 
 
-def sensor_function(diameter):
+def sensor_function(diameter, dim=2):
     """
-    Generates a devonvolution kernel with a circular shape.
+    Generates a 1D / 2D devonvolution kernel with the size of the sensor.
 
     Parameters
     ----------
     diameter : int
-        diameter of the circle
+        diameter of the sensor
+    dim : int, optional
+        dimensionality of the output. Defaults to 2.
 
     Returns
     -------
-    sf : 2D array
+    kernel : 1D / 2D array
         The deconvolution kernel
     """
     radius = diameter // 2
-    sf = np.zeros((diameter, diameter))
-    r, c, val = draw.circle_perimeter_aa(radius, radius, radius)
-    sf[r, c] = val
-    r, c, = draw.circle(radius, radius, radius)
-    sf[r, c] = 1
-    sf /= sf.sum()
-    return sf 
+    if dim == 1:
+        kernel = np.ones(diameter)
+    elif dim == 2:
+        kernel = np.zeros((diameter, diameter))
+        r, c, val = draw.circle_perimeter_aa(radius, radius, radius)
+        kernel[r, c] = val
+        r, c, = draw.circle(radius, radius, radius)
+        kernel[r, c] = 1
+    kernel /= kernel.sum()
+    return kernel
 
 
 def residual(params, x, y, data):
@@ -98,4 +106,4 @@ def detrend2D(x, y, z):
     result = lmfit.minimize(residual, params, args=(x, y, z))
     print(result.params)
     return residual(result.params, x, y, z)
-    
+
