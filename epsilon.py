@@ -3,7 +3,9 @@ from kapascan.controller import Controller
 import scipy.stats
 import numpy as np
 import matplotlib.pyplot as plt
+plt.ion()
 #%matplotlib inline
+
 
 sensor = '2011'
 host = '192.168.254.173'
@@ -41,6 +43,7 @@ with c:
         slope, intercept  = scipy.stats.linregress(x, data)[0:2]
         g = slope * x + intercept
         m = np.ones(len(x)) * data.mean()
+        plt.clf()
         plt.plot(x, data, x, m, x, g)
         plt.show()
         print()

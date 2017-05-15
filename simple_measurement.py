@@ -1,5 +1,6 @@
 from kapascan.controller import Controller
 import matplotlib.pyplot as plt
+plt.ion()
 
 sensor = '2011'
 host = '192.168.254.173'
@@ -12,4 +13,5 @@ with c:
     with c.acquisition('continuous', sampling_time):
         data = c.get_data(data_points, channels=[0]) / 1000
 
+plt.clf()
 plt.plot(data)
