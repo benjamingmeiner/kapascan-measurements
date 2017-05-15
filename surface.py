@@ -8,12 +8,13 @@ import shelve
 
 sensor = '2011'
 host = '192.168.254.173'
-serial_port = 'COM3'
+#serial_port = 'COM3'
+serial_port = '/dev/ttyACM0'
 
 settings = {
     'sampling_time': 0.256,
     'data_points': 100,
-    'extent': ((4, 21, 0.15), (4, 18, 0.15)),
+    'extent': ((1, 1.5, 0.1), (1, 1.5, 0.1)),
     'mode': 'absolute',
     'direction': ('x', 'y'),
     'change_direction': False
