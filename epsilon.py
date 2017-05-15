@@ -1,8 +1,5 @@
-import sys, os
-sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
-
-import helper
-import controller
+from kapascan.helper import query_options
+from kapascan.controller import Controller
 import scipy.stats
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +10,7 @@ host = '192.168.254.173'
 
 data_points = 2000
 sampling_time = 0.256  # ms
-c = controller.Controller(sensor, host)
+c = Controller(sensor, host)
 
 dm = []
 d2 = []
@@ -24,7 +21,7 @@ with c:
     while True:
         print()
         print("Continue?")
-        choice = helper.query_options(["Next", "Repeat", "Stop"], 1)
+        choice = query_options(["Next", "Repeat", "Stop"], 1)
         if choice == 3:
             break
         if choice == 1:
@@ -39,7 +36,7 @@ with c:
                 except ValueError:
                     print("Pleas enter a number!")
         with c.acquisition():
-            data = c.get_data(data_points, channels=[1]) / 1000
+            data = c.get_data(data_points, channels=[0]) / 1000
         x = np.arange(len(data))
         slope, intercept  = scipy.stats.linregress(x, data)[0:2]
         g = slope * x + intercept

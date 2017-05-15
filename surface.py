@@ -1,8 +1,5 @@
-import sys, os
-sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
-
-from measurement import Measurement
-from plot import plot
+from kapascan.measurement import Measurement
+from kapascan.plot import plot
 import numpy as np
 import shelve
 
