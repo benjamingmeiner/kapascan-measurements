@@ -36,8 +36,8 @@ plt.axes().set_aspect(1)
 plt.xlim([-0.1, 1.5])
 plt.ylim([0.9, 2.1])
 plt.grid()
-plt.xlabel("$d_m$ [mm]")
-plt.ylabel("$d_2$ [mm]")
+plt.xlabel("$d_2$ [mm]")
+plt.ylabel("$d_m$ [mm]")
 
 value_text = ("$s=${:.4}\n".format(slope) +
                "$t=${:.4} mm \n".format(intercept) + 
