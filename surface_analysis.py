@@ -1,9 +1,6 @@
-import sys, os
-sys.path.append(os.path.join(os.path.abspath(''), os.path.pardir, 'kapascan'))
-
 import numpy as np
-from plot import plot
-import analysis
+from kapascan.plot import plot
+from kapascan import analysis
 import shelve
 
 datadir = "data"
