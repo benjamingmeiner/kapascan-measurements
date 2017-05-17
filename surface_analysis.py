@@ -1,13 +1,15 @@
+import os
 import numpy as np
 from kapascan.plot import plot
-from kapascan import analysis
+from kapascan.sensor import SENSORS
+import analysis
 import shelve
 
 datadir = "data"
 basefilename = "surface"
 
 with shelve.open(os.path.join(datadir, basefilename + "_measurement")) as file:
-    measurement = file['measurement']
+    settings= file['settings']
 
 background = np.load(os.path.join(datadir, basefilename + "_background_z.npy"))
 background2 = np.load(os.path.join(datadir, basefilename + "_background2_z.npy"))
@@ -20,7 +22,7 @@ z = 0.5 * background + 0.5 * background2 - sample
 noise = (background2 - background) * 0.00005
 noise -= noise.mean()
 
-diameter = measurement._controller.sensor['diameter']
+diameter = SENSORS[settings['sensor']]['diameter']
 stepsize = x[1] - x[0]
 diameter_pixel = int(diameter / stepsize + 0.5)
 sensor = analysis.sensor_function(diameter_pixel)
