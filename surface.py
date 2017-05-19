@@ -19,7 +19,7 @@ settings = {
     'change_direction': False
     }
 
-for i in range(999):
+for i in range(2, 999):
     m = Measurement(host_controller, serial_port, host_logger, settings)
     with m:
         # m.interactive_mode()
