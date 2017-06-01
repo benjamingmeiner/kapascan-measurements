@@ -28,9 +28,9 @@ for i in range(2, 999):
         #plot(x, y, T)
 
 
-    datadir = "data/background"
-    filename = "{:03d}".format(i)
-    for coord, data in zip(("x", "y", "z", "T"), (x, y, z, T)):
-        np.save(os.path.join(datadir, filename + "_" + coord), data)
-    with shelve.open(os.path.join(datadir, filename + "_settings")) as file:
-        file['settings'] = m.settings
+#     datadir = "data/background"
+#     filename = "{:03d}".format(i)
+#     for coord, data in zip(("x", "y", "z", "T"), (x, y, z, T)):
+#         np.save(os.path.join(datadir, filename + "_" + coord), data)
+#     with shelve.open(os.path.join(datadir, filename + "_settings")) as file:
+#         file['settings'] = m.settings
