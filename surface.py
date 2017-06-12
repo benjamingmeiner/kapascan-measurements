@@ -1,8 +1,10 @@
 import os
 from kapascan.measurement import Measurement
+from kapascan.sendmail import send
 import plot
 import numpy as np
 import shelve
+import datetime
 
 host_controller = '192.168.254.173'
 host_logger = '192.168.254.51'
@@ -18,8 +20,14 @@ settings = {
     'change_direction': False
     }
 
-for i in range(10):
+to_addr = "b.gmeiner@gmx.de"
+
+for i in range(30, 100):
+
+    subject = "Measurement {}".format(i)
+    body = "Started at {}".format(datetime.datetime.now())
     m = Measurement(host_controller, serial_port, host_logger, settings)
+    send(to_addr, subject, body)
     with m:
         # m.interactive_mode()
         x, y, z, T = m.scan()
@@ -33,3 +41,6 @@ for i in range(10):
         np.save(os.path.join(datadir, filename + "_" + coord), data)
     with shelve.open(os.path.join(datadir, filename + "_settings")) as file:
         file['settings'] = m.settings
+
+    body = "Finished at {}".format(datetime.datetime.now())
+    send(to_addr, subject, body)
