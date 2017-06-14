@@ -5,7 +5,10 @@ import numpy as np
 from functools import partial
 
 
-def plot(x, y, z, contour=True):
+def plot(x, y, z, what="z", contour=False, limits=None):
+    x = np.asarray(x)
+    y = np.asarray(y)
+    z = np.asarray(z)
     xis1D = True if x.shape[0] is 1 else False
     yis1D = True if y.shape[0] is 1 else False
     if xis1D and yis1D:
@@ -15,7 +18,7 @@ def plot(x, y, z, contour=True):
     elif yis1D and not xis1D:
         return _plot1D(x, z[0], "$x$ [mm]", "$z$ [µm]")
     else:
-        return _plot2D(x, y, z)
+        return _plot2D(x, y, z, what, contour, limits)
 
 
 def _plot1D(x, y, xlabel, ylabel): 
@@ -24,7 +27,7 @@ def _plot1D(x, y, xlabel, ylabel):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     plt.show(block=False)
-    return fig
+    return fig, ax
 
 
 def _extent(x, y):
@@ -53,27 +56,30 @@ def _extent(x, y):
             dy = dx
     return (x[0] - dx, x[-1] + dx, y[0] - dy, y[-1] + dy)
 
-
-def _plot2D(x, y, z, contour=False): 
+def _plot2D(x, y, z, what="z", contour=False, limits=None): 
     ext = _extent(x, y)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(11, 8))
+    if limits is None:
+        limits = (z.min(), z.max())
     if contour:
         ax.contour(z, colors='k', extent=ext, linewidths=0.5)
-    image = ax.imshow(z, origin='lower', extent=ext, aspect='equal', picker=True)
+    image = ax.imshow(z, origin='lower', extent=ext, aspect='equal', 
+                      vmin=limits[0], vmax=limits[1], picker=True)
     cbar = fig.colorbar(image)
     tick_step = [int(np.ceil(len(c) / 11)) for c in [x, y]]
     ax.set_xticks(x[::tick_step[0]])
     ax.set_yticks(y[::tick_step[1]])
-    cbar.set_ticks(np.linspace(z.min(), z.max(), 8))
+    cbar.set_ticks(np.linspace(*limits, 8))
     ax.set_xlabel("x [mm]")
     ax.set_ylabel("y [mm]")
-    ax.set_title("Surface")
-    cbar.set_label("z [µm]")
-    
+    if what.lower() in ["z", "surface"]:
+        cbar.set_label("z [µm]")
+    elif what.lower() in ["t", "temp", "temperature"]:
+        cbar.set_label("Temperature [°C]"), 
     profile = _ProfileBuilder(fig, ax, x, y, z)
     profile.connect()
-    plt.show(block=False)
-    return fig
+    # plt.show(block=False)
+    return fig, ax
 
 
 def _plot_profile(x, y, z, src, dst):
@@ -106,7 +112,7 @@ def _plot_profile(x, y, z, src, dst):
     ax1.set_title("Profile Line", y=1.12)
     ax1.grid()
     plt.show(block=False)
-    return fig
+    return fig, (ax1, ax2)
 
 
 class _ProfileBuilder(object):
