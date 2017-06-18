@@ -1,10 +1,10 @@
 import os
-from kapascan.measurement import Measurement
-from kapascan.sendmail import send
-import plot
-import numpy as np
 import shelve
 import datetime
+from subprocess import call
+import numpy as np
+from kapascan.measurement import Measurement
+from kapascan.sendmail import send
 
 host_controller = '192.168.254.173'
 host_logger = '192.168.254.51'
@@ -13,34 +13,34 @@ serial_port = '/dev/ttyACM0'
 settings = {
     'sensors': ['1739'],
     'sampling_time': 0.256,
-    'data_points': 100,
-    'extent': ((13, 22, 0.025), (7, 15, 0.025)),
+    'data_points': 50,
+    'extent': ((19.5, 24.5, 0.015), (5, 9.5, 0.015)),
     'mode': 'absolute',
     'direction': ('x', 'y'),
     'change_direction': False
     }
 
-to_addr = "b.gmeiner@gmx.de"
+email_addr = "b.gmeiner@gmx.de"
 
-for i in range(30, 100):
+for i in range(21, 50):
 
-    subject = "Measurement {}".format(i)
-    body = "Started at {}".format(datetime.datetime.now())
+    email_subject = "Measurement {}".format(i)
+    email_body = "Started at {}".format(datetime.datetime.now())
     m = Measurement(host_controller, serial_port, host_logger, settings)
-    send(to_addr, subject, body)
+    send(email_addr, email_subject, email_body)
     with m:
-        # m.interactive_mode()
         x, y, z, T = m.scan()
-        # plot.plot(x, y, z)
-        # plot.plot(x, y, T)
 
-
-    datadir = "data/background_small_new"
+    datadir = "data/small"
     filename = "{:03d}".format(i)
     for coord, data in zip(("x", "y", "z", "T"), (x, y, z, T)):
         np.save(os.path.join(datadir, filename + "_" + coord), data)
     with shelve.open(os.path.join(datadir, filename + "_settings")) as file:
         file['settings'] = m.settings
 
-    body = "Finished at {}".format(datetime.datetime.now())
-    send(to_addr, subject, body)
+    call("git add {}".format(datadir))
+    call('git commit -m "Data: Measurement {}."'.format(i))
+    call("git push")
+
+    email_body = "Finished at {}".format(datetime.datetime.now())
+    send(email_addr, email_subject, email_body)
