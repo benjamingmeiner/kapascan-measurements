@@ -10,26 +10,27 @@ host_controller = '192.168.254.173'
 host_logger = '192.168.254.51'
 serial_port = '/dev/ttyACM0'
 
+resolution = [2, 1, 0.5, 0.2, 0.1, 0.05, 0.02]
 settings = {
     'sensors': ['1739'],
     'sampling_time': 0.256,
     'data_points': 50,
-    'extent': ((15.5, 21.5, 0.02), (8.0, 14, 0.02)),
     'mode': 'absolute',
     'direction': ('d', ),
     'change_direction': False
     }
-
 email_addr = "b.gmeiner@gmx.de"
 base_dir = "data"
-measurement_dir = "diagonal_0.01"
+measurement_dir = "resolution"
 
 data_dir = os.path.join(base_dir, measurement_dir)
 if not os.path.exists(data_dir):
     os.makedirs(data_dir, exist_ok=True)
 
-for i in range(10):
-    email_subject = "'{}': Measurement {}".format(measurement_dir, i)
+for i, res in enumerate(resolution):
+    settings['extent'] = ((15.5, 21.5, res), (8.0, 14, res))
+
+    email_subject = "'{}': Measurement {}".format(measurement_dir, res)
     email_body = "Started at {}".format(datetime.datetime.now())
     m = Measurement(host_controller, serial_port, host_logger, settings)
     send(email_addr, email_subject, email_body)
