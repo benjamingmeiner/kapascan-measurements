@@ -7,31 +7,31 @@ from kapascan.measurement import Measurement
 from kapascan.sendmail import send
 
 host_controller = '192.168.254.173'
-host_logger = '192.168.254.51'
+host_logger = '192.168.254.162'
 serial_port = '/dev/ttyACM0'
 
 settings = {
-    'sensors': ['1739'],
+    'sensors': ['2011', '1739'],
     'sampling_time': 0.256,
     'data_points': 50,
-    'extent': ((15.5+2, 21.5-2, 0.02), (8.0+2, 14-2, 0.02)),
+    'extent': ((15.5, 21.5, 0.02), (8.0, 14, 0.02)),
     'change_direction': False,
     'mode': 'absolute',
-    'direction': ('r',),
+    'direction': ('x', 'y'),
     }
 
 email_addr = "b.gmeiner@gmx.de"
 base_dir = "data"
-measurement_dir = "noise_random_0.02"
+measurement_dir = "noise_all_const_2chan_swap_0.02"
 
 data_dir = os.path.join(base_dir, measurement_dir)
 if not os.path.exists(data_dir):
     os.makedirs(data_dir, exist_ok=True)
 
-for i in range(10, 20):
-    email_subject = "'{}': Measurement {}".format(measurement_dir, i)
-    email_body = "Started at {}".format(datetime.datetime.now()) + \
-                 "Change direction: {}".format(settings['change_direction'])
+for i in range(10):
+    email_subject = "Measurement {} in '{}'".format(i, measurement_dir)
+    email_body = "Started at {}\n".format(datetime.datetime.now()) + \
+                 "Settings: {}".format(settings)
     m = Measurement(host_controller, serial_port, host_logger, settings)
     send(email_addr, email_subject, email_body)
     with m:
