@@ -31,10 +31,10 @@ def measure(settings, directory, script_filename, repeat=1):
     m = Measurement(host_controller, serial_port, host_logger, settings)
     for i in range(repeat):
         with m:
-            x, y, z, T = m.scan()
+            x, y, z, T, t = m.scan()
         prefix = _make_prefix(data_dir, i)
         print(prefix)
-        for coord, data in zip(("x", "y", "z", "T"), (x, y, z, T)):
+        for coord, data in zip(("x", "y", "z", "T", "t"), (x, y, z, T, t)):
             np.save(prefix + coord, data)
         with shelve.open(prefix + "settings") as file:
             file['settings'] = m.settings
@@ -50,7 +50,7 @@ def measure(settings, directory, script_filename, repeat=1):
 
 def align(settings):
     with Measurement(host_controller, serial_port, host_logger, settings) as m:
-        x, y, z, T =  m.scan()
+        x, y, z, T, t =  m.scan()
         plot.plot(x, y, z[0])
-        return x, y, z, T
+        return x, y, z, T, t
 
