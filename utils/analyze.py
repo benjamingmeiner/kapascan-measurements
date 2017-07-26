@@ -18,4 +18,4 @@ def load_data(directory, numbers):
         t.append(np.load(os.path.join(data_dir, filename_template % (i, "t"))))
         with shelve.open(os.path.join(data_dir, '%03d_settings' % i)) as file:
             settings.append(file['settings'])
-    return x, y, z, T, t
+    return x, y, z, T, t, settings

@@ -86,24 +86,22 @@ def sensor_function(diameter, dim=2):
     return kernel
 
 
-def residual(params, x, y, data):
+def residual(params, data):
     a = params['a']
     b = params['b']
     c = params['c']
 
-    xx, yy = np.meshgrid(x, y)
+    lenx, leny = data.shape
+    xx, yy = np.meshgrid(np.arange(lenx), np.arange(leny))
     model = a * xx + b * yy + c
     return (data - model)
 
-def detrend2D(x, y, z):
+def detrend2D(z):
     params = lmfit.Parameters()
     params.add('a', value=0)
     params.add('b', value=0)
     params.add('c', value=0)
-    params.add('d', value=0)
-    params.add('e', value=1000)
 
-    result = lmfit.minimize(residual, params, args=(x, y, z))
-    print(result.params)
-    return residual(result.params, x, y, z)
+    result = lmfit.minimize(residual, params, args=(z,))
+    return residual(result.params, z)
 
