@@ -25,11 +25,11 @@ def _make_prefix(data_dir, i):
             return prefix
 
 
-def measure(settings, directory, script_filename, repeat=1):
+def measure(settings, directory, script_filename, repeat=1, wipe_after=0):
     data_dir = os.path.join(base_dir, directory)
     os.makedirs(data_dir, exist_ok=True)
     m = Measurement(host_controller, serial_port, host_logger, settings)
-    for i in range(repeat):
+    for i in range(1, repeat + 1):
         with m:
             x, y, z, T, t = m.scan()
         prefix = _make_prefix(data_dir, i)
@@ -45,6 +45,9 @@ def measure(settings, directory, script_filename, repeat=1):
         if response.returncode != 0:
             print(response.stdout.decode('utf-8'))
             raise Exception(response.stderr.decode('utf-8'))
+        if i == wipe_after:
+            with m:
+                m.wipe()
     return m
 
 
