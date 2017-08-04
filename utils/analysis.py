@@ -34,7 +34,7 @@ def wiener(y, h, n, s=1):
 
     # pad signal with zeros to full length of actual convolution
     widths = [[width // 2] for width in h.shape]
-    y_padded = np.pad(y, widths, mode='constant', constant_values=0)
+    y_padded = np.pad(y, widths, mode='edge')
     # minimal length for fft to prevent circular convolution
     length = [sy + sh - 1  for sy, sh in zip(y_padded.shape, h.shape)]
 
