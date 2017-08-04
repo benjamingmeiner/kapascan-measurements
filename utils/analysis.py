@@ -1,6 +1,8 @@
 import numpy as np
 import lmfit
 from skimage import draw
+from scipy.ndimage.filters import gaussian_filter
+import cairocffi as cairo
 
 def wiener(y, h, n, s=1):
     """
@@ -57,31 +59,36 @@ def wiener(y, h, n, s=1):
         return x[:y.shape[0],:y.shape[1]].copy()
 
 
-def sensor_function(diameter, dim=2):
+def sensor_function(diameter, sigma=0):
     """
-    Generates a 1D / 2D devonvolution kernel with the size of the sensor.
+    Generates a 2D devonvolution kernel with a circular shape.
 
     Parameters
     ----------
-    diameter : int
-        diameter of the sensor
-    dim : int, optional
-        dimensionality of the output. Defaults to 2.
+    diameter : float
+        diameter of the sensor in pixels
+    sigma : float, optional
+        width of the gaussian filter in pixels
 
     Returns
     -------
-    kernel : 1D / 2D array
+    kernel : 2D array
         The deconvolution kernel
     """
-    radius = diameter // 2
-    if dim == 1:
-        kernel = np.ones(diameter)
-    elif dim == 2:
-        kernel = np.zeros((diameter, diameter))
-        r, c, val = draw.circle_perimeter_aa(radius, radius, radius)
-        kernel[r, c] = val
-        r, c, = draw.circle(radius, radius, radius)
-        kernel[r, c] = 1
+    dim = int(np.ceil(diameter))
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, dim, dim)
+    contex = cairo.Context(surface)
+
+    radius = diameter / 2
+    center = dim / 2
+    contex.arc(center, center, radius, 0, 2 * np.pi)
+    contex.fill()
+    kernel = np.frombuffer(surface.get_data(), dtype=np.uint32).astype(np.float)
+    kernel = kernel.reshape(dim, dim)
+    
+    # smooth boarder
+    kernel = np.pad(kernel, int(np.ceil(4*sigma)), 'constant')
+    kernel = gaussian_filter(kernel, sigma, mode='constant')
     kernel /= kernel.sum()
     return kernel
 
@@ -91,10 +98,11 @@ def residual(params, data):
     b = params['b']
     c = params['c']
 
-    lenx, leny = data.shape
+    leny, lenx = data.shape
     xx, yy = np.meshgrid(np.arange(lenx), np.arange(leny))
     model = a * xx + b * yy + c
     return (data - model)
+
 
 def detrend2D(z):
     params = lmfit.Parameters()
@@ -104,4 +112,3 @@ def detrend2D(z):
 
     result = lmfit.minimize(residual, params, args=(z,))
     return residual(result.params, z)
-
