@@ -93,6 +93,26 @@ def sensor_function(diameter, sigma=0):
     return kernel
 
 
+def sample_shape(coords, height, sigma, x, y):
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, len(x), len(y))
+    contex = cairo.Context(surface)
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+    
+    def rel(vx, vy):
+        return ((vx - x[0]) / dx, (vy - y[0]) / dy)
+    
+    contex.move_to(*rel(*coords[0]))
+    for cx, cy in coords:
+        contex.line_to(*rel(cx, cy))
+    contex.fill()
+    img = np.frombuffer(surface.get_data(), dtype=np.uint32).astype(np.float)
+    img *= height / img.max()
+    img = img.reshape(len(y), len(x))
+    img = gaussian_filter(img, sigma, mode='constant')
+    return img
+
+
 def residual(params, data):
     a = params['a']
     b = params['b']
