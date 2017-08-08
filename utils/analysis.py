@@ -2,6 +2,7 @@ import numpy as np
 import lmfit
 from skimage import draw
 from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage.interpolation import rotate
 import cairocffi as cairo
 
 def wiener(y, h, n, s=1):
@@ -93,7 +94,7 @@ def sensor_function(diameter, sigma=0):
     return kernel
 
 
-def sample_shape(coords, height, sigma, x, y):
+def sample_shape(coords, x, y, height=1, structure_height=0, structure_k=(1, 1), structure_angle=0, sigma=0):
     surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, len(x), len(y))
     contex = cairo.Context(surface)
     dx = x[1] - x[0]
@@ -109,6 +110,14 @@ def sample_shape(coords, height, sigma, x, y):
     img = np.frombuffer(surface.get_data(), dtype=np.uint32).astype(np.float)
     img *= height / img.max()
     img = img.reshape(len(y), len(x))
+    
+    xx, yy = np.meshgrid(range(len(x)), range(len(y)))
+    structure = 0.5 * structure_height * (np.sin(2 * np.pi / structure_k[0] * xx) +
+                                    np.cos(2 * np.pi / structure_k[1] * yy))
+    structure = rotate(structure, structure_angle, reshape=False, mode='reflect')
+    nonzero = np.where(np.abs(img) > np.abs(0.99 * height))
+    img[nonzero] += structure[nonzero]
+    
     img = gaussian_filter(img, sigma, mode='constant')
     return img
 
