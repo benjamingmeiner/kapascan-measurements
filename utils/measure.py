@@ -29,11 +29,11 @@ def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
     data_dir = os.path.join(base_dir, directory)
     os.makedirs(data_dir, exist_ok=True)
     m = Measurement(host_controller, serial_port, host_logger, settings)
-    if wipe_after >= 0:
+    if wipe_after is not None and wipe_after >= 0:
         m.check_wipe()
     for i in range(1, repeat + 1):
         with m:
-            if i == wipe_after + 1:
+            if wipe_after is not None and i == wipe_after + 1:
                 m.wipe()
             x, y, z, T, t = m.scan()
         prefix = _make_prefix(data_dir, i)
