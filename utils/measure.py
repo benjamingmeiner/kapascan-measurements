@@ -5,8 +5,9 @@ import glob
 from subprocess import run, PIPE
 import numpy as np
 from kapascan.measurement import Measurement, MeasurementError
+from kapascan.table import Table
 from . import plot
-
+from .log import log_exception
 
 host_controller = '192.168.254.173'
 host_logger = '192.168.254.174'
@@ -25,6 +26,7 @@ def _make_prefix(data_dir, i):
             return prefix
 
 
+@log_exception
 def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
     data_dir = os.path.join(base_dir, directory)
     os.makedirs(data_dir, exist_ok=True)
@@ -52,6 +54,7 @@ def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
     return m
 
 
+@log_exception
 def align(settings, check_wipe=False):
     with Measurement(host_controller, serial_port, host_logger, settings) as m:
         if check_wipe:
@@ -64,4 +67,10 @@ def align(settings, check_wipe=False):
         x, y, z, T, t =  m.scan()
         plot.plot(x, y, z[0])
         return x, y, z, T, t
+
+
+@log_exception
+def move():
+    with Table(serial_port) as t:
+        t.interact()
 
