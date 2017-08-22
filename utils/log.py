@@ -4,8 +4,8 @@ from functools import wraps
 from collections import deque
 
 
-logfile = "kapascan.log"
-
+logfile = "log.txt"
+progress_logfile = "../kapascan/status/log.txt"
 
 def log_exception(f):
     logger = logging.getLogger('')
@@ -19,11 +19,11 @@ def log_exception(f):
     return logging_f
 
 
-class DebugBuffer(logging.Handler):
-    def __init__(self, capacity, target, flushLevel=logging.ERROR):
+class BufferingDebugHandler(logging.Handler):
+    def __init__(self, capacity, targets, flushLevel=logging.ERROR):
         super().__init__()
         self.buffer = deque(maxlen=capacity)
-        self.target = target
+        self.targets = targets
         self.flushLevel = flushLevel
     
     def shouldFlush(self, record):
@@ -37,13 +37,15 @@ class DebugBuffer(logging.Handler):
             "          |                                                                  |\n" + 
             "          +------------------------------------------------------------------+\n", None, None)
         self.acquire()
-        self.target.handle(separator_record)
+        for target in self.targets:
+            target.handle(separator_record)
         try:
-            if self.target:
+            if self.targets:
                 while True:
                     try:
                         record = self.buffer.popleft()
-                        self.target.handle(record)
+                        for target in self.targets:
+                            target.handle(record)
                     except IndexError:
                         break
         finally:
@@ -60,28 +62,39 @@ class DebugBuffer(logging.Handler):
         finally:
             self.buffer.clear()
 
+            
+class ProgressFilter():
+    def filter(self, record):
+        return not record.name.endswith('progress')
 
 
 def configure_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
+    redact_progress = ProgressFilter()
     
     info_handler = logging.FileHandler(filename=logfile, mode='w')
     info_handler.setLevel(level)
-    error_handler = logging.StreamHandler(sys.stdout)
-    error_handler.setLevel(logging.ERROR)
-    debug_handler = logging.FileHandler(filename=logfile, mode='w')
+    info_handler.addFilter(redact_progress)
+    
+    progress_handler = logging.handlers.RotatingFileHandler(progress_logfile, mode='w', maxBytes=3000, backupCount=1)
+    progress_handler.setLevel(logging.INFO)
+    
+    debug_handler = logging.FileHandler(filename=logfile, mode='a')
     debug_handler.setLevel(logging.DEBUG)
-    debug_buffer_handler = DebugBuffer(500, target=info_handler, flushLevel=logging.ERROR)
-    debug_buffer_handler.setLevel(logging.DEBUG)
     
     info_formatter = logging.Formatter('{asctime}  {levelname:<8} {name}: {message}', style='{')
-    error_formatter = logging.Formatter('{message}', style='{')
     info_handler.setFormatter(info_formatter)
-    error_handler.setFormatter(error_formatter)
-    debug_handler.setFormatter(info_formatter)
+
+    progress_formatter = logging.Formatter('{asctime}: {message}', style='{')
+    progress_handler.setFormatter(progress_formatter)
+
+    debug_buffer_handler = BufferingDebugHandler(250, targets=[debug_handler], flushLevel=logging.ERROR)
+    debug_buffer_handler.setLevel(logging.DEBUG)
     
     logger.addHandler(info_handler)
-    logger.addHandler(error_handler)
     logger.addHandler(debug_buffer_handler)
+    logger.addHandler(progress_handler)
+
+    

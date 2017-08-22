@@ -2,10 +2,12 @@ import os
 import shelve
 import datetime
 import glob
+import logging
 from subprocess import run, PIPE
 import numpy as np
 from kapascan.measurement import Measurement, MeasurementError
 from kapascan.table import Table
+from kapascan.helper import BraceMessage as __
 from . import plot
 from .log import log_exception
 
@@ -16,6 +18,7 @@ serial_port = '/dev/ttyACM0'
 base_dir = "data"
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
+logger = logging.getLogger(__name__)
 
 def _make_prefix(data_dir, i):
     while True:
@@ -39,17 +42,18 @@ def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
                 m.wipe()
             x, y, z, T, t = m.scan()
         prefix = _make_prefix(data_dir, i)
-        print(prefix)
         for coord, data in zip(("x", "y", "z", "T", "t"), (x, y, z, T, t)):
             np.save(prefix + coord, data)
         with shelve.open(prefix + "settings") as file:
             file['settings'] = m.settings
+        logger.info(__("Written measurement data to {}.", prefix))
         commit_message = "Measurement {} in {}.".format(i, directory)
         response = run([os.path.join(script_dir, "git.sh"),
                         data_dir, script_filename, commit_message],
                        stdout=PIPE, stderr=PIPE)
+        branch_name = os.path.basename(data_dir)
+        logger.info(__("Switched to branch {} and commited data.", branch_name))
         if response.returncode != 0:
-            print(response.stdout.decode('utf-8'))
             raise Exception(response.stderr.decode('utf-8'))
     return m
 
