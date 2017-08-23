@@ -1,11 +1,22 @@
 import logging
-import sys
+import time
+import threading, queue
+import smtplib
+from email.message import EmailMessage
+import email.utils
 from functools import wraps
 from collections import deque
-
+from credentials import *
 
 logfile = "log.txt"
 progress_logfile = "../kapascan/status/log.txt"
+email_settings = {'mail_host': ('smtp.web.de', 587),
+                  'from_user': 'kapascan@web.de',
+                  'credentials': (username, password),
+                  'subject': 'kapascan',
+                  'send_intervall': 300,
+                  }
+
 
 def log_exception(f):
     logger = logging.getLogger('')
@@ -25,17 +36,17 @@ class BufferingDebugHandler(logging.Handler):
         self.buffer = deque(maxlen=capacity)
         self.targets = targets
         self.flushLevel = flushLevel
-    
+
     def shouldFlush(self, record):
         return record.levelno >= self.flushLevel
-    
+
     def flush(self):
         separator_record = logging.LogRecord('', logging.DEBUG, '', 0, "\n\n" +
-            "          +------------------------------------------------------------------+\n" +
-            "          |                                                                  |\n" + 
-            "          |                latest DEBUG output appended below:               |\n" +
-            "          |                                                                  |\n" + 
-            "          +------------------------------------------------------------------+\n", None, None)
+        "          +------------------------------------------------------------------+\n" +
+        "          |                                                                  |\n" +
+        "          |                latest DEBUG output appended below:               |\n" +
+        "          |                                                                  |\n" +
+        "          +------------------------------------------------------------------+\n", None, None)
         self.acquire()
         for target in self.targets:
             target.handle(separator_record)
@@ -50,7 +61,7 @@ class BufferingDebugHandler(logging.Handler):
                         break
         finally:
             self.release()
-    
+
     def emit(self, record):
         self.buffer.append(record)
         if self.shouldFlush(record):
@@ -62,39 +73,115 @@ class BufferingDebugHandler(logging.Handler):
         finally:
             self.buffer.clear()
 
-            
+
+class BufferingSMTPHandler(logging.Handler):
+    def __init__(self, mail_host, from_address, to_address, subject, send_interval=300, credentials=None, secure=None, timeout=5):
+        super().__init__()
+        if isinstance(mail_host, (list, tuple)):
+            self.mail_host, self.mail_port = mail_host
+        else:
+            self.mail_host, self.mail_port = mail_host, smtplib.SMTP_PORT
+        if isinstance(credentials, (list, tuple)):
+            self.username, self.password = credentials
+        else:
+            self.username = None
+        self.from_address = from_address
+        if isinstance(to_address, str):
+            to_address = [to_address]
+        self.to_address = to_address
+        self.subject = subject
+        self.secure = secure
+        self.timeout = timeout
+        self.send_interval = send_interval
+
+        self.buffer = queue.Queue()
+        self._stop = threading.Event()
+        self.thread = threading.Thread(target=self.target, name=self.__class__.__name__)
+
+    def emit(self, record):
+        self.buffer.append(record)
+
+    def target(self):
+        last_send = time.time()
+        next_send = last_send + self.send_interval
+        while not self._stop.is_set():
+            if time.time() > next_send:
+                last_send = time.time()
+                self.send_buffer()
+                next_send = last_send + self.send_interval
+            time.sleep(max(next_send - time.time(), 0))
+
+    def send_buffer(self):
+        try:
+            outgoing = []
+            while not queue.empty():
+                record = queue.get_nowait()
+                outgoing.append(self.format(record))
+                body = '\r\n\r\n'.join(outgoing)
+            message = self.make_email(body)
+            smtp = smtplib.SMTP(self.mailhost, self.mailport, timeout=self.timeout)
+            if self.username:
+                if self.secure is not None:
+                    smtp.ehlo()
+                    smtp.starttls(*self.secure)
+                    smtp.ehlo()
+                smtp.login(self.username, self.password)
+            smtp.send_message(message)
+            smtp.quit()
+        except Exception:
+            self.handleError(record)
+
+    def format_email(self, body):
+        message = EmailMessage()
+        message['From'] = self.from_address
+        message['To'] = ','.join(self.to_address)
+        message['Subject'] = self.subject
+        message['Date'] = email.utils.localtime()
+        message.set_content(body)
+        return message
+
+    def close(self):
+        self._stop.set()
+        self.thread.join()
+        super().close()
+
+
 class ProgressFilter():
     def filter(self, record):
         return not record.name.endswith('progress')
 
 
-def configure_logging(debug=False):
+def configure_logging(debug=False, email=None):
     level = logging.DEBUG if debug else logging.INFO
-    logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
+    # Filters:
     redact_progress = ProgressFilter()
-    
-    info_handler = logging.FileHandler(filename=logfile, mode='w')
-    info_handler.setLevel(level)
-    info_handler.addFilter(redact_progress)
-    
-    progress_handler = logging.handlers.RotatingFileHandler(progress_logfile, mode='w', maxBytes=3000, backupCount=1)
-    progress_handler.setLevel(logging.INFO)
-    
+    # Formatters:
+    info_formatter = logging.Formatter('{asctime}  {levelname:<8} {name}: {message}', style='{')
+    progress_formatter = logging.Formatter('{asctime}: {message}', style='{')
+    # Handlers:
+    file_info_handler = logging.FileHandler(filename=logfile, mode='w')
+    file_info_handler.setLevel(level)
+    file_info_handler.addFilter(redact_progress)
+    file_info_handler.setFormatter(info_formatter)
     debug_handler = logging.FileHandler(filename=logfile, mode='a')
     debug_handler.setLevel(logging.DEBUG)
-    
-    info_formatter = logging.Formatter('{asctime}  {levelname:<8} {name}: {message}', style='{')
-    info_handler.setFormatter(info_formatter)
-
-    progress_formatter = logging.Formatter('{asctime}: {message}', style='{')
+    progress_handler = logging.handlers.RotatingFileHandler(progress_logfile, mode='w', maxBytes=3000, backupCount=1)
+    progress_handler.setLevel(logging.INFO)
     progress_handler.setFormatter(progress_formatter)
-
     debug_buffer_handler = BufferingDebugHandler(250, targets=[debug_handler], flushLevel=logging.ERROR)
     debug_buffer_handler.setLevel(logging.DEBUG)
-    
-    logger.addHandler(info_handler)
+    if email:
+        email_settings['to_address'] = email
+        email_info_handler = BufferingSMTPHandler(**email_settings)
+        email_info_handler.setLevel(logging.INFO)
+        email_info_handler.addFilter(redact_progress)
+        email_info_handler.setFormatter(info_formatter)
+    # Loggers:
+    logger = logging.getLogger('')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(file_info_handler)
     logger.addHandler(debug_buffer_handler)
     logger.addHandler(progress_handler)
+    if email:
+        logger.addHandler(email_info_handler)
 
-    
