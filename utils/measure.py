@@ -31,12 +31,14 @@ def _make_prefix(data_dir, i):
 
 @log_exception
 def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
+    logger.info(__("Measurement {}:", directory))
     data_dir = os.path.join(base_dir, directory)
     os.makedirs(data_dir, exist_ok=True)
     m = Measurement(host_controller, serial_port, host_logger, settings)
     if wipe_after is not None and wipe_after >= 0:
         m.check_wipe()
     for i in range(1, repeat + 1):
+        logger.info(__("Scan {} of {}:", i, repeat))
         with m:
             if wipe_after is not None and i == wipe_after + 1:
                 m.wipe()
@@ -51,8 +53,7 @@ def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
         response = run([os.path.join(script_dir, "git.sh"),
                         data_dir, script_filename, commit_message],
                        stdout=PIPE, stderr=PIPE)
-        branch_name = os.path.basename(data_dir)
-        logger.info(__("Switched to branch {} and commited data.", branch_name))
+        logger.info(__("Switched to branch {} and commited data.", directory))
         if response.returncode != 0:
             raise Exception(response.stderr.decode('utf-8'))
     return m

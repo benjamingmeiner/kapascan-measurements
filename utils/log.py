@@ -6,16 +6,18 @@ from email.message import EmailMessage
 import email.utils
 from functools import wraps
 from collections import deque
-from credentials import *
+from .credentials import *
 
 logfile = "log.txt"
 progress_logfile = "../kapascan/status/log.txt"
 email_settings = {'mail_host': ('smtp.web.de', 587),
-                  'from_user': 'kapascan@web.de',
+                  'from_address': 'kapascan@web.de',
                   'credentials': (username, password),
                   'subject': 'kapascan',
-                  'send_intervall': 300,
+                  'send_interval': 30,
                   }
+
+logger = logging.getLogger(__name__)
 
 
 def log_exception(f):
@@ -75,7 +77,7 @@ class BufferingDebugHandler(logging.Handler):
 
 
 class BufferingSMTPHandler(logging.Handler):
-    def __init__(self, mail_host, from_address, to_address, subject, send_interval=300, credentials=None, secure=None, timeout=5):
+    def __init__(self, mail_host, from_address, to_address, subject, send_interval, credentials=None, timeout=5):
         super().__init__()
         if isinstance(mail_host, (list, tuple)):
             self.mail_host, self.mail_port = mail_host
@@ -90,16 +92,16 @@ class BufferingSMTPHandler(logging.Handler):
             to_address = [to_address]
         self.to_address = to_address
         self.subject = subject
-        self.secure = secure
         self.timeout = timeout
         self.send_interval = send_interval
 
         self.buffer = queue.Queue()
         self._stop = threading.Event()
         self.thread = threading.Thread(target=self.target, name=self.__class__.__name__)
+        self.thread.start()
 
     def emit(self, record):
-        self.buffer.append(record)
+        self.buffer.put(record)
 
     def target(self):
         last_send = time.time()
@@ -114,20 +116,13 @@ class BufferingSMTPHandler(logging.Handler):
     def send_buffer(self):
         try:
             outgoing = []
-            while not queue.empty():
-                record = queue.get_nowait()
+            while not self.buffer.empty():
+                record = self.buffer.get_nowait()
                 outgoing.append(self.format(record))
+            if outgoing:
                 body = '\r\n\r\n'.join(outgoing)
-            message = self.make_email(body)
-            smtp = smtplib.SMTP(self.mailhost, self.mailport, timeout=self.timeout)
-            if self.username:
-                if self.secure is not None:
-                    smtp.ehlo()
-                    smtp.starttls(*self.secure)
-                    smtp.ehlo()
-                smtp.login(self.username, self.password)
-            smtp.send_message(message)
-            smtp.quit()
+                message = self.format_email(body)
+                self.send_email(message)
         except Exception:
             self.handleError(record)
 
@@ -140,9 +135,18 @@ class BufferingSMTPHandler(logging.Handler):
         message.set_content(body)
         return message
 
+    def send_email(self, message):
+        with smtplib.SMTP(self.mail_host, self.mail_port, timeout=self.timeout) as smtp:
+            if self.username:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.login(self.username, self.password)
+            smtp.send_message(message)
+
     def close(self):
         self._stop.set()
         self.thread.join()
+        
         super().close()
 
 
@@ -156,8 +160,9 @@ def configure_logging(debug=False, email=None):
     # Filters:
     redact_progress = ProgressFilter()
     # Formatters:
-    info_formatter = logging.Formatter('{asctime}  {levelname:<8} {name}: {message}', style='{')
-    progress_formatter = logging.Formatter('{asctime}: {message}', style='{')
+    datefmt='%Y-%m-%d %H:%M:%S'
+    info_formatter = logging.Formatter('{asctime} {levelname:^8} {message:<55}   {name:>20}', style='{', datefmt=datefmt)
+    progress_formatter = logging.Formatter('{asctime} {message}', style='{', datefmt=datefmt)
     # Handlers:
     file_info_handler = logging.FileHandler(filename=logfile, mode='w')
     file_info_handler.setLevel(level)
