@@ -8,13 +8,13 @@ from functools import wraps
 from collections import deque
 from .credentials import *
 
-logfile = "log.txt"
-progress_logfile = "../kapascan/status/log.txt"
+logfile = "/home/kapascan/statuslog/log.txt"
+progress_logfile = "/home/kapascan/statuslog/latest_log.txt"
 email_settings = {'mail_host': ('smtp.web.de', 587),
                   'from_address': 'kapascan@web.de',
                   'credentials': (username, password),
                   'subject': 'kapascan',
-                  'send_interval': 30,
+                  'send_interval': 60,
                   }
 
 logger = logging.getLogger(__name__)
@@ -161,7 +161,7 @@ def configure_logging(debug=False, email=None):
     redact_progress = ProgressFilter()
     # Formatters:
     datefmt='%Y-%m-%d %H:%M:%S'
-    info_formatter = logging.Formatter('{asctime} {levelname:^8} {message:<55}   {name:>20}', style='{', datefmt=datefmt)
+    info_formatter = logging.Formatter('{asctime} {levelname:^8} {message:<110}   {name:>20}', style='{', datefmt=datefmt)
     progress_formatter = logging.Formatter('{asctime} {message}', style='{', datefmt=datefmt)
     # Handlers:
     file_info_handler = logging.FileHandler(filename=logfile, mode='w')
