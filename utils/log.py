@@ -170,11 +170,11 @@ def configure_logging(debug=False, email=None):
     file_info_handler.setFormatter(info_formatter)
     debug_handler = logging.FileHandler(filename=logfile, mode='a')
     debug_handler.setLevel(logging.DEBUG)
+    debug_buffer_handler = BufferingDebugHandler(250, targets=[debug_handler], flushLevel=logging.ERROR)
+    debug_buffer_handler.setLevel(logging.DEBUG)
     progress_handler = logging.handlers.RotatingFileHandler(progress_logfile, mode='w', maxBytes=3000, backupCount=1)
     progress_handler.setLevel(logging.INFO)
     progress_handler.setFormatter(progress_formatter)
-    debug_buffer_handler = BufferingDebugHandler(250, targets=[debug_handler], flushLevel=logging.ERROR)
-    debug_buffer_handler.setLevel(logging.DEBUG)
     if email:
         email_settings['to_address'] = email
         email_info_handler = BufferingSMTPHandler(**email_settings)
@@ -185,8 +185,9 @@ def configure_logging(debug=False, email=None):
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
     logger.addHandler(file_info_handler)
-    logger.addHandler(debug_buffer_handler)
     logger.addHandler(progress_handler)
+    if level != logging.DEBUG:
+        logger.addHandler(debug_buffer_handler)       
     if email:
         logger.addHandler(email_info_handler)
 

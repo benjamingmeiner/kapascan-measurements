@@ -42,7 +42,11 @@ def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
         with m:
             if wipe_after is not None and i == wipe_after + 1:
                 m.wipe()
-            x, y, z, T, t = m.scan()
+            try:
+                x, y, z, T, t = m.scan()
+            except MeasurementError as error:
+                print(error)
+                return
         prefix = _make_prefix(data_dir, i)
         for coord, data in zip(("x", "y", "z", "T", "t"), (x, y, z, T, t)):
             np.save(prefix + coord, data)
