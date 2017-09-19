@@ -74,7 +74,8 @@ def align(settings, check_wipe=False):
             else:
                 print("Wiping possible.")
         x, y, z, T, t =  m.scan()
-        plot.plot(x, y, z[0])
+        for zi in z:
+            plot.plot(x, y, zi)
         return x, y, z, T, t
 
 
