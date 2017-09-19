@@ -3,9 +3,11 @@ import shelve
 import datetime
 import glob
 import logging
+import time
 from subprocess import run, PIPE
 import numpy as np
 from kapascan.measurement import Measurement, MeasurementError
+from kapascan.controller import Controller, ControllerError
 from kapascan.table import Table
 from kapascan.helper import BraceMessage as __
 from . import plot
@@ -84,3 +86,34 @@ def move():
     with Table(serial_port) as t:
         t.interact()
 
+@log_exception
+def raw_measure(directory, script_filename, settings, repeat=1):    
+    logger.info(__("Raw Measurement {}.", directory))
+    logger.info(__("Acquiring data with settings:\n", settings, pretty=True))
+    data_dir = os.path.join(base_dir, directory)
+    os.makedirs(data_dir, exist_ok=True)
+    c = Controller(settings['sensors'], host_controller)
+    for i in range(1, repeat + 1):
+        logger.info(__("Acquisition {} of {}:", i, repeat))
+        with c:
+            try:
+                t0 = time.time()
+                data = c.acquire(settings['data_points'], settings['mode'], settings['sampling_time'])
+                t1 = time.time()
+            except ControllerError as error:
+                print(error)
+                return
+        prefix = _make_prefix(data_dir, i)
+        np.save(prefix + "data", data)
+        np.save(prefix + "time", [t0, t1])
+        with shelve.open(prefix + "settings") as file:
+            file['settings'] = settings
+        logger.info(__("Written raw measurement data to {}.", prefix))
+        commit_message = "Raw Measurement {} in {}.".format(i, directory)
+        response = run([os.path.join(script_dir, "git.sh"),
+                        data_dir, script_filename, commit_message],
+                       stdout=PIPE, stderr=PIPE)
+        logger.info(__("Switched to branch {} and commited data.", directory))
+        if response.returncode != 0:
+            raise Exception(response.stderr.decode('utf-8'))
+    return c
