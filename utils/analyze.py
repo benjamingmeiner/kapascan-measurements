@@ -28,6 +28,18 @@ def load_data(directory, numbers):
     return x, y, z, T, t, settings
 
 
+def load_raw_data(directory, numbers):
+    data, time, settings = [[] for _ in range(3)]
+    data_dir = os.path.join(base_dir, directory)
+    filename_template = "%03d_%s.npy"
+    for i in numbers:
+        data.append(np.load(os.path.join(data_dir, filename_template % (i, "data"))))
+        time.append(np.load(os.path.join(data_dir, filename_template % (i, "time"))))
+        with shelve.open(os.path.join(data_dir, '%03d_settings' % i)) as file:
+            settings.append(file['settings'])
+    return data, time, settings
+
+
 def wiener(y, h, n, s=1):
     """
     2D Wiener deconvolution. Implemented as defined in
