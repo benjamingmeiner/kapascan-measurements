@@ -54,13 +54,13 @@ def wiener(y, h, n, s=1):
         The impulse response (point spread function) of the system
 
     n : scalar or ndarray (1D or 2D)
-        The signal from which the power spectral density of the noise is
-        calculated. If n is a scalar the value is used directly as the PSD.
+        The signal, the power spectral density of the noise is calculated.
+        from. If n is a scalar, the value is used as the PSD.
 
     s : scalar or ndarray (1D or 2D), optional
-        The signal from which the power spectral density of the origininal
-        signal is calculated. If s is a scalar the value is used directly as
-        the PSD.
+        The signal, the power spectral density of the origininal signal
+        is calculated from. If s is a scalar, the value is used as the
+        PSD.
 
     Returns
     -------
