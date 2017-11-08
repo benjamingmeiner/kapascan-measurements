@@ -55,7 +55,7 @@ def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
         with shelve.open(prefix + "settings") as file:
             file['settings'] = m.settings
         logger.info(__("Written measurement data to {}.", prefix))
-        commit_message = "Measurement {} in {}.".format(i, directory)
+        commit_message = "Measurement {}: Data {}.".format(directory, i)
         response = run([os.path.join(script_dir, "git.sh"),
                         data_dir, script_filename, commit_message],
                        stdout=PIPE, stderr=PIPE)
