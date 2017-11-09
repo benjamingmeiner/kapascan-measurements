@@ -40,7 +40,7 @@ def load_raw_data(directory, numbers):
     return data, time, settings
 
 
-def wiener(y, h, n, s=1):
+def wiener(y, h, n, s=1, extra=0):
     """
     2D Wiener deconvolution. Implemented as defined in
     https://en.wikipedia.org/wiki/Wiener_deconvolution
@@ -68,8 +68,9 @@ def wiener(y, h, n, s=1):
         An estimate of the original signal.
     """
 
-    # pad signal with zeros to full length of actual convolution
-    widths = [[width // 2] for width in h.shape]
+    # pad signal with edge value to full length of actual convolution
+    extra_widths = [extra * width for width in h.shape]
+    widths = [[width // 2 + extra_width]  for width, extra_width in zip(h.shape, extra_widths)]
     y_padded = np.pad(y, widths, mode='edge')
     # minimal length for fft to prevent circular convolution
     length = [sy + sh - 1  for sy, sh in zip(y_padded.shape, h.shape)]
@@ -89,10 +90,12 @@ def wiener(y, h, n, s=1):
     X = G * Y
     x = np.fft.irfftn(X, length)
 
-    if len(y.shape) == 1:
-        return x[:y.shape[0]].copy()
-    if len(y.shape) == 2:
-        return x[:y.shape[0],:y.shape[1]].copy()
+    x00 = extra_widths[0]
+    x01 = x00 + y.shape[0]
+    x10 = extra_widths[1]
+    x11 = x10 + y.shape[1]
+    return x[x00:x01, x10:x11].copy()
+    # return x[:y.shape[0],:y.shape[1]].copy()
 
 
 def sensor_function(diameter, sigma=0):
