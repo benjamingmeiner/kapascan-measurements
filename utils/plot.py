@@ -44,8 +44,8 @@ def _extent(x, y):
     extent : tuple
         The extent values
     """
-    dx = (x[-1] - x[0]) / (2 * len(x))
-    dy = (y[-1] - y[0]) / (2 * len(y))
+    dx = 0.5 * (x[-1] - x[0]) / (len(x) - 1)
+    dy = 0.5 * (y[-1] - y[0]) / (len(y) - 1)
     
     if dx == 0 and dy == 0:
         dx, dy = 1, 1
