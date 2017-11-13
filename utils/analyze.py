@@ -68,12 +68,31 @@ def wiener(y, h, n, s=1, extra=0):
         An estimate of the original signal.
     """
 
+    def pad(widths):
+        return np.array([[width] for width in widths])
+
+    def shape(x):
+        return np.array(x.shape)
+
     # pad signal with edge value to full length of actual convolution
-    extra_widths = [extra * width for width in h.shape]
-    widths = [[width // 2 + extra_width]  for width, extra_width in zip(h.shape, extra_widths)]
-    y_padded = np.pad(y, widths, mode='edge')
+    sensor_widths = np.array([width // 2 for width in h.shape])
+    extra_widths = np.array([int(extra * width / 2) for width in h.shape])
+    widths = sensor_widths + extra_widths
+
+    y_padded = np.pad(y, pad(widths // 2), mode='linear_ramp')
+    y_padded = np.pad(y_padded, pad(widths - widths // 2), mode='constant', constant_values=0)
+    y_padded_smoothed = gaussian_filter(y_padded, widths / 8, mode="constant", cval=0)
+
+    zeros_shape = shape(y) - sensor_widths // 2 * 2
+    mask = np.zeros(zeros_shape)
+    mask = np.pad(mask, pad(sensor_widths // 2), mode='constant', constant_values=1)
+    mask = np.pad(mask, pad(widths), mode='constant', constant_values=1)
+    mask = gaussian_filter(mask, widths / 8, mode="constant", cval=1)
+
+    y_padded_smoothed_masked = y_padded_smoothed * mask + y_padded * (1 - mask)
+
     # minimal length for fft to prevent circular convolution
-    length = [sy + sh - 1  for sy, sh in zip(y_padded.shape, h.shape)]
+    length = shape(y_padded) + shape(h) - 1
 
     if not np.isscalar(n):
         N = np.absolute(np.fft.rfftn(n, length))**2
@@ -84,7 +103,7 @@ def wiener(y, h, n, s=1, extra=0):
     else:
         S = s
 
-    Y = np.fft.rfftn(y_padded, length)
+    Y = np.fft.rfftn(y_padded_smoothed_masked, length)
     H = np.fft.rfftn(h, length)
     G = (np.conj(H) * S) / (np.absolute(H)**2 * S + N)
     X = G * Y
@@ -95,7 +114,6 @@ def wiener(y, h, n, s=1, extra=0):
     x10 = extra_widths[1]
     x11 = x10 + y.shape[1]
     return x[x00:x01, x10:x11].copy()
-    # return x[:y.shape[0],:y.shape[1]].copy()
 
 
 def sensor_function(diameter, sigma=0):
