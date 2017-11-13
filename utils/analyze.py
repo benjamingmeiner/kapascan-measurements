@@ -1,6 +1,7 @@
 import os
 import shelve
 import numpy as np
+import itertools
 import lmfit
 from skimage import draw
 from scipy.ndimage.filters import gaussian_filter
@@ -197,3 +198,10 @@ def detrend2D(z):
 
     result = lmfit.minimize(residual, params, args=(z,))
     return residual(result.params, z)
+
+
+def interpolate_background(x0, y0, z0, x1, y1):
+    xi = np.array(list(itertools.product(y1, x1)))
+    z1 = interpn((x0, y0), z0, xi,
+                  method='linear', bounds_error=False, fill_value=None)
+    return z1.reshape(len(y1), len(x1))
