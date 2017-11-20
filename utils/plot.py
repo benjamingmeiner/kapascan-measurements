@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from skimage.measure import profile_line
 import numpy as np
+import datetime
+from matplotlib.dates import HourLocator, DateFormatter
 
 
 def _extent(x, y):
@@ -30,12 +32,13 @@ def _extent(x, y):
             dy = dx
     return (x[0] - dx, x[-1] + dx, y[0] - dy, y[-1] + dy)
 
+
 def plot(x, y, z, what="z", title="", contour=False, limits=None):
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)
     ext = _extent(x, y)
-    fig, ax = plt.subplots(figsize=(9, 5.5))
+    fig, ax = plt.subplots(figsize=(7, 5.5))
     if limits is None:
         limits = (z.min(), z.max())
     if contour:
@@ -55,6 +58,7 @@ def plot(x, y, z, what="z", title="", contour=False, limits=None):
     elif what.lower() in ["t", "temp", "temperature"]:
         cbar.set_label("Temperature [°C]"), 
     return fig, ax
+
 
 def plot_profile(x, y, z, src, dst, title="Profile Line"):
     x = np.asarray(x)
@@ -79,6 +83,7 @@ def plot_profile(x, y, z, src, dst, title="Profile Line"):
     lim2 = list(sorted([src[1], dst[1]]))
     ax1.set_xlim(lim1)
     ax2.set_xlim(lim2)
+    
     ax1.set_xticks(np.linspace(ax1.get_xbound()[0], ax1.get_xbound()[1], 8))
     ax2.set_xticks(np.linspace(ax2.get_xbound()[0], ax2.get_xbound()[1], 8))
     ax1.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -119,3 +124,22 @@ class ProfileBuilder():
             x = [self.coords[0][0], self.coords[1][0]]
             y = [self.coords[0][1], self.coords[1][1]]
             self.ax.plot(x, y, color=(0.7, 0.1, 0))
+
+
+def cat1d(x):
+    x_flat = [xi.flatten() for xi in x]
+    return np.concatenate(x_flat)
+
+
+def logscale(x, a=1):
+    return np.log(x - x.min() + 1) ** (1/a)
+
+
+def plot_temp_trend(t, T):
+    dt = np.array([[datetime.datetime.fromtimestamp(tii) for tii in ti] for ti in t])
+    fig, ax = plt.subplots()
+    ax.plot(cat1d(dt), cat1d(T))
+    ax.xaxis.set_major_locator(HourLocator())
+    ax.xaxis.set_major_formatter(DateFormatter("%H:%M"))
+    fig.autofmt_xdate()
+    return fig, ax
