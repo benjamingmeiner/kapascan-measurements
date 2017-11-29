@@ -87,7 +87,7 @@ def move():
         t.interact()
 
 @log_exception
-def raw_measure(directory, script_filename, settings, repeat=1):    
+def raw_measure(settings, directory, script_filename, repeat=1):
     logger.info(__("Raw Measurement {}.", directory))
     logger.info(__("Acquiring data with settings:\n", settings, pretty=True))
     data_dir = os.path.join(base_dir, directory)
