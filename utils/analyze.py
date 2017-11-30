@@ -4,6 +4,7 @@ import numpy as np
 import itertools
 import lmfit
 from skimage import draw
+import scipy.signal
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.interpolation import rotate
 import cairocffi as cairo
@@ -205,3 +206,53 @@ def interpolate_background(x0, y0, z0, x1, y1):
     z1 = interpn((x0, y0), z0, xi,
                   method='linear', bounds_error=False, fill_value=None)
     return z1.reshape(len(y1), len(x1))
+
+
+def sgolay2d(z, window_size, order, derivative=None):
+    """
+    """
+    # number of terms in the polynomial expression
+    n_terms = (order + 1) * (order + 2)  / 2.0
+    
+    if  window_size % 2 == 0:
+        raise ValueError('window_size must be odd')
+    
+    if window_size**2 < n_terms:
+        raise ValueError('order is too high for the window size')
+
+    half_size = window_size // 2
+    
+    # exponents of the polynomial. 
+    # p(x,y) = a0 + a1*x + a2*y + a3*x^2 + a4*y^2 + a5*x*y + ... 
+    # this line gives a list of two item tuple. Each tuple contains 
+    # the exponents of the k-th term. First element of tuple is for x
+    # second element for y.
+    # Ex. exps = [(0,0), (1,0), (0,1), (2,0), (1,1), (0,2), ...]
+    exps = [(k - n, n) for k in range(order + 1) for n in range(k + 1)]
+    
+    # coordinates of points
+    ind = np.arange(-half_size, half_size + 1, dtype=np.float64)
+    dx = np.repeat(ind, window_size)
+    dy = np.tile(ind, [window_size, 1]).reshape(window_size**2, )
+
+    # build matrix of system of equation
+    A = np.empty((window_size**2, len(exps)))
+    for i, exp in enumerate(exps):
+        A[:, i] = (dx**exp[0]) * (dy**exp[1])
+
+    Z = np.pad(z, half_size, mode='reflect', reflect_type='odd')
+    
+    # solve system and convolve
+    if derivative == None:
+        m = np.linalg.pinv(A)[0].reshape((window_size, -1))
+        return scipy.signal.fftconvolve(Z, m, mode='valid')
+    elif derivative == 'col':
+        c = np.linalg.pinv(A)[1].reshape((window_size, -1))
+        return scipy.signal.fftconvolve(Z, -c, mode='valid')        
+    elif derivative == 'row':
+        r = np.linalg.pinv(A)[2].reshape((window_size, -1))
+        return scipy.signal.fftconvolve(Z, -r, mode='valid')        
+    elif derivative == 'both':
+        c = np.linalg.pinv(A)[1].reshape((window_size, -1))
+        r = np.linalg.pinv(A)[2].reshape((window_size, -1))
+        return scipy.signal.fftconvolve(Z, -r, mode='valid'), scipy.signal.fftconvolve(Z, -c, mode='valid')

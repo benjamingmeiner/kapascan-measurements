@@ -64,6 +64,8 @@ def plot_profile(x, y, z, src, dst, title="Profile Line"):
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)
+    if len(z.shape) == 2:
+        z = [z]
     xextent = x[-1] - x[0]
     yextent = y[-1] - y[0]
     src_pixel = [0, 0]
@@ -72,12 +74,16 @@ def plot_profile(x, y, z, src, dst, title="Profile Line"):
     src_pixel[1] = len(x) * (src[0] - x[0]) / xextent
     dst_pixel[0] = len(y) * (dst[1] - y[0]) / yextent
     dst_pixel[1] = len(x) * (dst[0] - x[0]) / xextent
-    z_profile = profile_line(z, src_pixel, dst_pixel, linewidth=1, order=1, mode='nearest')
+    
+    z_profiles = []
+    for zi in z:
+        z_profiles.append(profile_line(zi, src_pixel, dst_pixel, linewidth=1, order=1, mode='nearest'))
 
     fig, ax1 = plt.subplots(figsize=(8, 7))
-    x_profile = np.linspace(src[0], dst[0], len(z_profile))
-    ax1.plot(x_profile, z_profile, color=(0.7, 0.1, 0))
-    
+    x_profile = np.linspace(src[0], dst[0], len(z_profiles[0]))
+    for z_profile in z_profiles:
+        ax1.plot(x_profile, z_profile)
+        
     ax2 = ax1.twiny()
     lim1 = list(sorted([src[0], dst[0]]))
     lim2 = list(sorted([src[1], dst[1]]))
