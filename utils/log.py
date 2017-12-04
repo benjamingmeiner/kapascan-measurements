@@ -137,6 +137,7 @@ class BufferingSMTPHandler(logging.Handler):
 
     def send_email(self, message):
         with smtplib.SMTP(self.mail_host, self.mail_port, timeout=self.timeout) as smtp:
+            smtp.set_debuglevel(1)
             if self.username:
                 smtp.ehlo()
                 smtp.starttls()
