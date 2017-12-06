@@ -16,30 +16,46 @@ from .measure import _make_prefix
 base_dir = "data"
 
 
-def load_data(directory, numbers):
+def load_data(directory, numbers='all'):
     x, y, z, T, t, settings = [[] for _ in range(6)]
     data_dir = os.path.join(base_dir, directory)
     filename_template = "%03d_%s.npy"
+    if numbers == 'all':
+        numbers = itertools.count(start=1)
     for i in numbers:
-        x.append(np.load(os.path.join(data_dir, filename_template % (i, "x"))))
-        y.append(np.load(os.path.join(data_dir, filename_template % (i, "y"))))
-        z.append(np.load(os.path.join(data_dir, filename_template % (i, "z"))))
-        T.append(np.load(os.path.join(data_dir, filename_template % (i, "T"))))
-        t.append(np.load(os.path.join(data_dir, filename_template % (i, "t"))))
-        with shelve.open(os.path.join(data_dir, '%03d_settings' % i)) as file:
-            settings.append(file['settings'])
+        try:
+            x.append(np.load(os.path.join(data_dir, filename_template % (i, "x"))))
+            y.append(np.load(os.path.join(data_dir, filename_template % (i, "y"))))
+            z.append(np.load(os.path.join(data_dir, filename_template % (i, "z"))))
+            T.append(np.load(os.path.join(data_dir, filename_template % (i, "T"))))
+            t.append(np.load(os.path.join(data_dir, filename_template % (i, "t"))))
+            with shelve.open(os.path.join(data_dir, '%03d_settings' % i)) as file:
+                settings.append(file['settings'])
+        except FileNotFoundError as error:
+            if type(numbers) is itertools.count:
+                break
+            elif i in numbers:
+                raise error
     return x, y, z, T, t, settings
 
 
-def load_raw_data(directory, numbers):
+def load_raw_data(directory, numbers='all'):
     data, time, settings = [[] for _ in range(3)]
     data_dir = os.path.join(base_dir, directory)
     filename_template = "%03d_%s.npy"
+    if numbers == 'all':
+        numbers = itertools.count(start=1)
     for i in numbers:
-        data.append(np.load(os.path.join(data_dir, filename_template % (i, "data"))))
-        time.append(np.load(os.path.join(data_dir, filename_template % (i, "time"))))
-        with shelve.open(os.path.join(data_dir, '%03d_settings' % i)) as file:
-            settings.append(file['settings'])
+        try:
+            data.append(np.load(os.path.join(data_dir, filename_template % (i, "data"))))
+            time.append(np.load(os.path.join(data_dir, filename_template % (i, "time"))))
+            with shelve.open(os.path.join(data_dir, '%03d_settings' % i)) as file:
+                settings.append(file['settings'])
+        except FileNotFoundError as error:
+            if type(numbers) is itertools.count:
+                break
+            elif i in numbers:
+                raise error
     return data, time, settings
 
 
