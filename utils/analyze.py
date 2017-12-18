@@ -225,6 +225,32 @@ def interpolate_background(x0, y0, z0, x1, y1):
     return z1.reshape(len(y1), len(x1))
 
 
+def ring(x, y, coords, r1, r2, sigma=0):
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, len(x), len(y))
+    context = cairo.Context(surface)
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+    if dx != dy:
+        raise ValueError("x and y have different resolutions")
+    
+    def rel(vx, vy):
+        return ((vx - x[0]) / dx, (vy - y[0]) / dy)
+    
+    center = rel(*coords)
+    r1 = r1 / dx
+    r2 = r2 / dx
+    context.arc(*center, r1, 0, 2 * np.pi)
+    context.arc(*center, r2, 0, 2 * np.pi)
+    context.set_fill_rule(cairo.FILL_RULE_EVEN_ODD)
+    context.fill()
+    img = np.frombuffer(surface.get_data(), dtype=np.uint32).astype(np.float)    
+    img /= img.max()
+    img = img.reshape(len(y), len(x))
+    if sigma:
+        img = gaussian_filter(img, sigma)
+    return img
+
+
 def sgolay2d(z, window_size, order, derivative=None):
     """
     """
