@@ -10,10 +10,18 @@ from scipy.ndimage.interpolation import rotate
 from scipy.interpolate import interpn
 import cairocffi as cairo
 import matplotlib.pyplot as plt
-from .measure import _make_prefix
 
 
 base_dir = "data"
+
+
+def _make_prefix(data_dir, i):
+    while True:
+        prefix = os.path.join(data_dir, "{:03d}_".format(i))
+        if glob.glob(prefix + "*"):
+            i += 1
+        else:
+            return prefix
 
 
 def load_data(directory, numbers='all'):

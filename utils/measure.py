@@ -12,6 +12,7 @@ from kapascan.table import Table
 from kapascan.helper import BraceMessage as __
 from . import plot
 from .log import log_exception
+from .analyze import _make_prefix
 
 host_controller = '192.168.254.173'
 host_logger = '192.168.254.174'
@@ -21,14 +22,6 @@ base_dir = "data"
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 logger = logging.getLogger(__name__)
-
-def _make_prefix(data_dir, i):
-    while True:
-        prefix = os.path.join(data_dir, "{:03d}_".format(i))
-        if glob.glob(prefix + "*"):
-            i += 1
-        else:
-            return prefix
 
 
 @log_exception
