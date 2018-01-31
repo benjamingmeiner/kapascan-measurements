@@ -5,6 +5,9 @@ import numpy as np
 import datetime
 from matplotlib.dates import HourLocator, DateFormatter
 
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, zoomed_inset_axes
+#from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+
 
 def _extent(x, y):
     """
@@ -33,7 +36,7 @@ def _extent(x, y):
     return (x[0] - dx, x[-1] + dx, y[0] - dy, y[-1] + dy)
 
 
-def plot(x, y, z, what="z", title="", contour=False, limits=None):
+def plot(x, y, z, what="z", title="", contour=False, limits=None, psf=None, psf_loc=3):
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)
@@ -45,6 +48,13 @@ def plot(x, y, z, what="z", title="", contour=False, limits=None):
         ax.contour(z, colors='k', extent=ext, linewidths=0.5)
     image = ax.imshow(z, origin='lower', extent=ext, aspect='equal', 
                       vmin=limits[0], vmax=limits[1], picker=True)
+    if psf is not None:
+        width = "{}%".format(psf.shape[0] / len(x) * 100)
+        height = "{}%".format(psf.shape[1] / len(y) * 100)
+        inset_ax = inset_axes(ax, height=height, width=width, loc=psf_loc)
+        inset_ax.imshow(psf)
+        inset_ax.get_xaxis().set_visible(False)
+        inset_ax.get_yaxis().set_visible(False)
     cbar = fig.colorbar(image)
     tick_step = [int(np.ceil(len(c) / 11)) for c in [x, y]]
     ax.set_xticks(x[::tick_step[0]])
