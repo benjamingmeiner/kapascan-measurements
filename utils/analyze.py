@@ -3,7 +3,7 @@ import shelve
 import numpy as np
 import itertools
 import lmfit
-from skimage import draw
+from skimage import draw, transform
 import scipy.signal
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.interpolation import rotate
@@ -143,7 +143,7 @@ def wiener(y, h, n, s=1, extra=0):
     return x[x00:x01, x10:x11].copy()
 
 
-def sensor_function(diameter, sigma=0):
+def sensor_function(diameter, sigma=0, theta=0, phi=0, z0=None):
     """
     Generates a 2D devonvolution kernel with a circular shape.
 
@@ -153,6 +153,12 @@ def sensor_function(diameter, sigma=0):
         diameter of the sensor in pixels
     sigma : float, optional
         width of the gaussian filter in pixels
+    theta : float
+        tilt angle of the sensor in degree
+    phi : float
+        direction angle of tilting in degree
+    z0 : float
+        mean distance of the sensor to the object in pixel
 
     Returns
     -------
@@ -169,6 +175,18 @@ def sensor_function(diameter, sigma=0):
     contex.fill()
     kernel = np.frombuffer(surface.get_data(), dtype=np.uint32).astype(np.float)
     kernel = kernel.reshape(dim, dim)
+
+    if theta == 0:
+        z0 = 1
+    elif z0 is None:
+        raise(Exception("Please provide z0!"))
+
+    x = np.arange(dim, dtype=np.float) - (dim - 1) /  2
+    f = 1 / (1 + x * np.tan(np.pi * theta / 180) / z0)
+    kernel *= f
+
+    kernel = transform.rescale(kernel, (1, np.cos(np.pi * theta / 180)), order=3, clip=False, mode='constant')
+    kernel = transform.rotate(kernel, phi, resize=True, order=3, clip=False, mode='constant')
     
     # smooth boarder
     kernel = np.pad(kernel, int(np.ceil(4*sigma)), 'constant')
