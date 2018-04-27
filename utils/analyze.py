@@ -25,8 +25,10 @@ def _make_prefix(data_dir, i):
             return prefix
 
 
-def load_data(directory, numbers='all'):
-    x, y, z, T, t, settings = [[] for _ in range(6)]
+def load_data(directory, numbers='all', legacy=False):
+    x, y, z, T, settings = [[] for _ in range(5)]
+    if not legacy:
+        t = []
     data_dir = os.path.join(base_dir, directory)
     filename_template = "%03d_%s.npy"
     if numbers == 'all':
@@ -37,7 +39,8 @@ def load_data(directory, numbers='all'):
             y.append(np.load(os.path.join(data_dir, filename_template % (i, "y"))))
             z.append(np.load(os.path.join(data_dir, filename_template % (i, "z"))))
             T.append(np.load(os.path.join(data_dir, filename_template % (i, "T"))))
-            t.append(np.load(os.path.join(data_dir, filename_template % (i, "t"))))
+            if not legacy:
+                t.append(np.load(os.path.join(data_dir, filename_template % (i, "t"))))
             with shelve.open(os.path.join(data_dir, '%03d_settings' % i)) as file:
                 settings.append(file['settings'])
         except FileNotFoundError as error:
@@ -45,8 +48,10 @@ def load_data(directory, numbers='all'):
                 break
             elif i in numbers:
                 raise error
-    return x, y, z, T, t, settings
-
+    if not legacy:
+        return x, y, z, T, t, settings
+    else:
+        return x, y, z, T, settings
 
 def load_raw_data(directory, numbers='all'):
     data, time, settings = [[] for _ in range(3)]
