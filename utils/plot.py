@@ -159,3 +159,14 @@ def plot_temp_trend(t, T):
     ax.xaxis.set_major_formatter(DateFormatter("%H:%M"))
     fig.autofmt_xdate()
     return fig, ax
+
+
+def plot_raw(data, times):
+    fig, ax = plt.subplots()
+    nr_of_samples = data.shape[1]
+    t = np.linspace(*times, nr_of_samples)
+    for d in data:
+        ax.plot(t, d)
+    ax.set_xlabel("t [s]")
+    ax.set_ylabel("z [µm]")
+    return fig, ax

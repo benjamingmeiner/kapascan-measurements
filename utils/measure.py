@@ -73,6 +73,16 @@ def align(settings, check_wipe=False):
             plot.plot(x, y, zi)
         return x, y, z, T, t
 
+@log_exception
+def align_raw(settings):
+    c = Controller(settings['sensors'], host_controller)
+    with c:
+        t0 = time.time()
+        data = c.acquire(settings['data_points'], settings['mode'], settings['sampling_time'])
+        t1 = time.time()
+    plot.plot_raw(data, [0, t1 - t0])
+    return data, [t0, t1]
+
 
 @log_exception
 def move():
