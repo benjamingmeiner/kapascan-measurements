@@ -2,7 +2,7 @@
 set -e
 
 data_dir=$1
-script_filename=$2
+scripts=$2
 message=$3
 branch=$(basename "$data_dir")
 
@@ -15,6 +15,5 @@ if [ "$current_branch" != "$branch" ]; then
         git checkout -b "$branch"
     fi
 fi
-git add $data_dir $script_filename
+git add $data_dir $scripts
 git commit -m "$message"
-

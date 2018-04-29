@@ -25,9 +25,11 @@ logger = logging.getLogger(__name__)
 
 
 @log_exception
-def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
+def measure(settings, directory, scripts, repeat=1, wipe_after=None):
     logger.info(__("Measurement {}:", directory))
     data_dir = os.path.join(base_dir, directory)
+    if not isinstance(scripts, str):
+        scripts = " ".join(scripts)
     os.makedirs(data_dir, exist_ok=True)
     m = Measurement(host_controller, serial_port, host_logger, settings)
     if wipe_after is not None and wipe_after >= 0:
@@ -50,7 +52,7 @@ def measure(settings, directory, script_filename, repeat=1, wipe_after=None):
         logger.info(__("Written measurement data to {}.", prefix))
         commit_message = "Measurement {}: Data {}.".format(directory, i)
         response = run([os.path.join(script_dir, "git.sh"),
-                        data_dir, script_filename, commit_message],
+                        data_dir, scripts, commit_message],
                        stdout=PIPE, stderr=PIPE)
         logger.info(__("Switched to branch {} and commited data.", directory))
         if response.returncode != 0:
